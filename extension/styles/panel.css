@@ -1,0 +1,373 @@
+#phishguard-panel.pg-shell {
+  position: fixed;
+  top: 86px;
+  right: 28px;
+  z-index: 2147483647;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 116px);
+  overflow: auto;
+  box-sizing: border-box;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(119, 134, 160, 0.24);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  padding: 16px;
+  backdrop-filter: blur(18px);
+}
+
+#phishguard-panel.pg-hidden {
+  display: none;
+}
+
+#phishguard-panel * {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.pg-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pg-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.pg-brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: #14213d;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pg-subtitle {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pg-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pg-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.pg-icon-btn:hover {
+  background: #f8fafc;
+  border-color: rgba(20, 33, 61, 0.28);
+}
+
+.pg-score-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.pg-low {
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  color: #065f46;
+}
+
+.pg-medium {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.pg-high {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.pg-risk-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pg-verdict {
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+.pg-score-ring {
+  --pg-score: 0;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at center, #ffffff 0 56%, transparent 57%),
+    conic-gradient(currentColor calc(var(--pg-score) * 1%), rgba(100, 116, 139, 0.18) 0);
+}
+
+.pg-score-ring span {
+  font-size: 22px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.pg-score-ring small {
+  margin-top: -18px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.68;
+}
+
+.pg-message-card,
+.pg-error-card {
+  padding: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: #f8fafc;
+  margin-bottom: 12px;
+}
+
+.pg-kicker {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.pg-message-title {
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.pg-message-sender {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pg-metric {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.pg-metric span,
+.pg-detail-row span {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pg-metric strong {
+  display: block;
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.pg-metric small {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pg-section {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.pg-section-title {
+  margin-bottom: 9px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pg-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.pg-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.pg-badge-pass {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pg-badge-warn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pg-detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.pg-detail-row strong {
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.pg-flags {
+  display: grid;
+  gap: 7px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.pg-flags li {
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pg-flags .pg-positive {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.pg-error-card {
+  display: grid;
+  gap: 6px;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.pg-error-card strong {
+  color: #7c2d12;
+  font-size: 13px;
+}
+
+.pg-error-card span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pg-loading-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.pg-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 999px;
+  animation: pg-spin 0.8s linear infinite;
+}
+
+.pg-skeleton {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
+  background-size: 200% 100%;
+  animation: pg-pulse 1.2s ease-in-out infinite;
+  margin-top: 10px;
+}
+
+.pg-skeleton-title {
+  width: 72%;
+  height: 14px;
+  margin-top: 0;
+}
+
+.pg-skeleton-short {
+  width: 48%;
+}
+
+@keyframes pg-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pg-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 760px) {
+  #phishguard-panel.pg-shell {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    max-height: 72vh;
+  }
+}

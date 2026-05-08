@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { box-sizing: border-box; letter-spacing: 0; }
+    body {
+      width: 380px;
+      min-height: 420px;
+      margin: 0;
+      padding: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+      background: #eef2f7;
+    }
+    .shell {
+      padding: 16px;
+      background:
+        linear-gradient(135deg, rgba(20, 33, 61, 0.08), rgba(0, 163, 150, 0.08)),
+        #f8fafc;
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 850;
+      font-size: 17px;
+      color: #0f172a;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      box-shadow: 0 10px 22px rgba(20, 33, 61, 0.22);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #475569;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .pill.online { background: #dff8ea; color: #087443; }
+    .pill.offline { background: #fee2e2; color: #991b1b; }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .card {
+      padding: 15px;
+      border: 1px solid rgba(119, 134, 160, 0.22);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+    }
+    .title {
+      margin: 0 0 5px;
+      font-size: 14px;
+      font-weight: 820;
+      color: #0f172a;
+    }
+    .copy {
+      margin: 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 14px;
+    }
+    button {
+      min-height: 40px;
+      border: 1px solid rgba(100, 116, 139, 0.22);
+      border-radius: 13px;
+      background: #ffffff;
+      color: #172033;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    button.primary {
+      border-color: #14213d;
+      background: #14213d;
+      color: #ffffff;
+    }
+    button:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+    .result {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .score {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: #ecfdf5;
+      border: 1px solid #bbf7d0;
+      color: #065f46;
+    }
+    .score.medium {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .score.high {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .score-label {
+      font-size: 11px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+    .score-verdict {
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.3;
+    }
+    .score-number {
+      font-size: 28px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .meta,
+    .metric-grid {
+      display: grid;
+      gap: 9px;
+    }
+    .metric-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .mini {
+      padding: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      border-radius: 14px;
+      background: #ffffff;
+    }
+    .mini span {
+      display: block;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 760;
+    }
+    .mini strong {
+      display: block;
+      margin-top: 5px;
+      color: #0f172a;
+      font-size: 12px;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .flags {
+      display: grid;
+      gap: 7px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .flags li {
+      padding: 9px 10px;
+      border-radius: 12px;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .flags li.ok {
+      background: #ecfdf5;
+      color: #047857;
+    }
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 12px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #dbeafe;
+      border-top-color: #2563eb;
+      border-radius: 999px;
+      animation: spin 0.8s linear infinite;
+    }
+    .hint {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="top">
+      <div class="brand"><img src="icons/icon48.png" alt=""> PhishGuard</div>
+      <div class="pill" id="backend-status"><span class="dot"></span><span>Checking</span></div>
+    </div>
+
+    <section class="card">
+      <p class="title">Email risk check</p>
+      <p class="copy" id="status-text">Open a Gmail message, then scan it here.</p>
+      <div class="actions">
+        <button class="primary" id="scan-btn" type="button">Scan email</button>
+        <button id="clear-btn" type="button">Clean page</button>
+      </div>
+      <div id="result"></div>
+    </section>
+
+    <div class="hint">No Gmail sidebar is injected anymore. Results stay in this popup.</div>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
