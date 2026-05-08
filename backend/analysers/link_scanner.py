@@ -18,11 +18,11 @@ def scan_links(links: list) -> dict:
     }
 
     suspicious_patterns = [
-        r'bit\.ly|tinyurl|t\.co|goo\.gl',         # URL shorteners
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',   # IP-based URLs
-        r'@',                                        # @ in URL (trick)
+        r'bit\.ly|tinyurl|t\.co|goo\.gl',         
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',   
+        r'@',                                        
         r'secure.*login|verify.*account|update.*payment',
-        r'paypal|amazon|google|microsoft|apple',    # Brand impersonation
+        r'paypal|amazon|google|microsoft|apple',    
     ]
 
     for link in links:

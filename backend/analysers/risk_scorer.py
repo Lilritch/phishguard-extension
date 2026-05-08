@@ -1,18 +1,20 @@
 def calculate_risk_score(ml_result: dict, header_result: dict,
-                          ip_result: dict, link_result: dict) -> dict:
+                          ip_result: dict, link_result: dict,
+                          intent_result: dict = None,
+                          prompt_result: dict = None) -> dict:
     """
     Combine all signals into a single risk score (0-100) and level.
     """
     score = 0
     flags = []
 
-    # ML model confidence (max 40 points)
+    
     ml_confidence = ml_result.get('confidence', 0)
     score += (ml_confidence / 100) * 40
     if ml_confidence >= 70:
         flags.append(f"AI model: {ml_confidence}% confidence this is phishing/spam")
 
-    # Header analysis (max 25 points)
+    
     if header_result.get('spf') == 'FAIL':
         score += 10
         flags.append('SPF check failed')
@@ -26,7 +28,7 @@ def calculate_risk_score(ml_result: dict, header_result: dict,
         score += 8
         flags.append('Reply-To address does not match sender')
 
-    # IP analysis (max 20 points)
+    
     if ip_result.get('is_vpn_proxy'):
         score += 8
         flags.append('Sent through VPN/proxy/hosting server')
@@ -34,17 +36,33 @@ def calculate_risk_score(ml_result: dict, header_result: dict,
         score += 12
         flags.append(f"Sender IP flagged: {ip_result.get('abuse_score')}% abuse score")
 
-    # Link analysis (max 15 points)
+    
     suspicious_count = len(link_result.get('suspicious_links', []))
     link_score = min(suspicious_count * 5, 15)
     score += link_score
     if suspicious_count > 0:
         flags.append(f"{suspicious_count} suspicious link(s) in email")
 
-    # Cap at 100
+    
+    intent_result = intent_result or {}
+    if intent_result.get('matches'):
+        intent_confidence = intent_result.get('confidence', 0)
+        score += min((intent_confidence / 100) * 10, 10)
+        flags.append(intent_result.get('flags', [])[0])
+
+    
+    prompt_result = prompt_result or {}
+    if prompt_result.get('risk') == 'HIGH':
+        score += 10
+        flags.append('Hidden AI prompt-injection patterns detected')
+    elif prompt_result.get('risk') == 'MEDIUM':
+        score += 5
+        flags.append('Possible hidden AI prompt-injection content')
+
+    
     score = min(round(score), 100)
  
-    # Determine level
+    
     if score >= 65:
         level = "HIGH"
         verdict = "🔴 HIGH RISK — Likely phishing or scam"
@@ -59,5 +77,5 @@ def calculate_risk_score(ml_result: dict, header_result: dict,
         "score": score,
         "level": level,
         "verdict": verdict,
-        "flags": flags + header_result.get('flags', []) + ip_result.get('flags', [])
+        "flags": flags + header_result.get('flags', []) + ip_result.get('flags', []) + prompt_result.get('flags', [])
     } 

@@ -57,12 +57,15 @@ def analyse_headers(raw_headers: str) -> dict:
     if public_ips:
         results['sender_ip'] = public_ips[-1]  # Last hop = original sender
 
-    # Extract sender domain from From header
+    sender_domain_match = re.search(r'x-sender-domain:\s*([\w\.-]+)', headers_lower)
+    if sender_domain_match:
+        results['sender_domain'] = sender_domain_match.group(1)
+
     from_match = re.search(r'from:.*?@([\w\.-]+)', headers_lower)
-    if from_match:
+    if from_match and not results['sender_domain']:
         results['sender_domain'] = from_match.group(1)
 
-    # Check Reply-To mismatch
+    
     from_match2 = re.search(r'from:.*?<(.+?)>', headers_lower)
     reply_match = re.search(r'reply-to:.*?<(.+?)>', headers_lower)
     if from_match2 and reply_match:

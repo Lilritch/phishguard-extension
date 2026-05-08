@@ -20,6 +20,7 @@
     {
       "matches": ["https://mail.google.com/*"],
       "js": ["content.js"],
+      "css": ["styles/panel.css"],
       "run_at": "document_idle"
     }
   ],
