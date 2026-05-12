@@ -274,6 +274,7 @@ function renderResult(data, email, memoryInsight) {
   const ip = data?.ip || {};
   const intent = data?.intent || {};
   const promptInjection = data?.prompt_injection || {};
+  const aiExplanation = data?.ai_explanation || {};
 
   const level = String(risk.level || 'LOW').toLowerCase();
   const scoreClass = level === 'high' ? 'high' : level === 'medium' ? 'medium' : '';
@@ -290,6 +291,13 @@ function renderResult(data, email, memoryInsight) {
   const verificationHTML = buildVerificationPlan(email, data, memoryInsight)
     .map((step) => `<li>${escapeHTML(step)}</li>`)
     .join('');
+  const aiFlags = Array.isArray(aiExplanation.red_flags) ? aiExplanation.red_flags : [];
+  const aiFlagsHTML = aiFlags.length
+    ? aiFlags.slice(0, 4).map((flag) => `<li>${escapeHTML(flag)}</li>`).join('')
+    : '<li>No AI explanation flags available.</li>';
+  const aiProviderLabel = aiExplanation.enabled
+    ? `${aiExplanation.provider || 'AI'} · ${aiExplanation.model || 'model'}`
+    : 'Local explanation';
 
   result.innerHTML = `
     <div class="result">
@@ -303,7 +311,7 @@ function renderResult(data, email, memoryInsight) {
 
       <div class="metric-grid">
         <div class="mini">
-          <span>AI verdict</span>
+          <span>ML verdict</span>
           <strong>${escapeHTML(ml.label || 'Unknown')} · ${escapeHTML(ml.confidence ?? 0)}%</strong>
         </div>
         <div class="mini">
@@ -336,6 +344,13 @@ function renderResult(data, email, memoryInsight) {
         <span>Hidden AI-instruction check</span>
         <strong>${escapeHTML(promptInjection.risk || 'NONE')}</strong>
         <ul>${promptHTML}</ul>
+      </div>
+
+      <div class="insight ai">
+        <span>AI explanation · ${escapeHTML(aiProviderLabel)}</span>
+        <strong>${escapeHTML(aiExplanation.summary || 'No AI explanation returned.')}</strong>
+        <ul>${aiFlagsHTML}</ul>
+        <p>${escapeHTML(aiExplanation.recommended_action || 'No recommendation returned.')}</p>
       </div>
 
       <div class="insight">

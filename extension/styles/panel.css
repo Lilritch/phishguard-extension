@@ -324,6 +324,25 @@
   line-height: 1.35;
 }
 
+.pg-panel-ai {
+  border-top-color: rgba(129, 140, 248, 0.26);
+  background: rgba(79, 70, 229, 0.12);
+}
+
+.pg-panel-ai ul {
+  display: grid;
+  gap: 5px;
+  padding: 0;
+  margin: 8px 0 0;
+  list-style: none;
+}
+
+.pg-panel-ai li {
+  color: #cbd5e1;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 .pg-panel-flags {
   display: grid;
   gap: 7px;

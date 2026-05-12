@@ -168,6 +168,7 @@
     const links = data?.links || {};
     const intent = data?.intent || {};
     const prompt = data?.prompt_injection || {};
+    const aiExplanation = data?.ai_explanation || {};
     const level = String(risk.level || 'LOW').toLowerCase();
     const levelClass = level === 'high' ? 'pg-level-high' : level === 'medium' ? 'pg-level-medium' : 'pg-level-low';
     const icon = level === 'high' ? '!' : level === 'medium' ? '?' : '✓';
@@ -179,6 +180,13 @@
       : (email.senderDomain || hdr.sender_domain || 'Unknown domain');
     const originSecondary = ip.ip ? `IP ${ip.ip}` : `Domain ${email.senderDomain || hdr.sender_domain || '-'}`;
     const promptRisk = prompt.risk || 'NONE';
+    const aiProviderLabel = aiExplanation.enabled
+      ? `${aiExplanation.provider || 'AI'} · ${aiExplanation.model || 'model'}`
+      : 'Local explanation';
+    const aiFlags = Array.isArray(aiExplanation.red_flags) ? aiExplanation.red_flags : [];
+    const aiFlagsHTML = aiFlags.length
+      ? aiFlags.slice(0, 3).map((flag) => `<li>${escapeHTML(flag)}</li>`).join('')
+      : '<li>No AI explanation flags available.</li>';
 
     const flagsHTML = flags.length
       ? flags.slice(0, 5).map((flag, index) => `
@@ -234,7 +242,7 @@
         </div>
 
         <div class="pg-panel-cell">
-          <div class="pg-cell-label">AI verdict</div>
+          <div class="pg-cell-label">ML verdict</div>
           <div class="pg-cell-primary">${escapeHTML(ml.label || 'Unknown')}</div>
           <div class="pg-cell-secondary">${escapeHTML(ml.confidence ?? 0)}% confidence</div>
           <div class="pg-ai-bar"><div class="pg-ai-fill" data-target="${Number(ml.confidence || 0)}"></div></div>
@@ -255,6 +263,13 @@
       <div class="pg-panel-insight">
         <strong>Hidden AI-instruction check: ${escapeHTML(promptRisk)}</strong>
         <span>${escapeHTML(prompt.findings?.[0] || 'No hidden AI manipulation patterns detected.')}</span>
+      </div>
+
+      <div class="pg-panel-insight pg-panel-ai">
+        <strong>AI explanation: ${escapeHTML(aiProviderLabel)}</strong>
+        <span>${escapeHTML(aiExplanation.summary || 'No AI explanation returned.')}</span>
+        <ul>${aiFlagsHTML}</ul>
+        <span>${escapeHTML(aiExplanation.recommended_action || 'No recommendation returned.')}</span>
       </div>
 
       <div class="pg-panel-flags">${flagsHTML}</div>

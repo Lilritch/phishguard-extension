@@ -12,6 +12,7 @@ from analysers.link_scanner import extract_links, scan_links
 from analysers.risk_scorer import calculate_risk_score
 from analysers.intent_analyser import analyse_intent
 from analysers.prompt_injection_analyser import analyse_prompt_injection
+from analysers.ai_analyser import analyse_with_ai
 
 app = Flask(__name__)
 CORS(app)  # Allow Chrome extension to call this API
@@ -66,6 +67,19 @@ def analyse():
         intent_result,
         prompt_result
     )
+    ai_result = analyse_with_ai(
+        subject,
+        body,
+        sender_email,
+        sender_domain,
+        risk,
+        ml_result,
+        header_result,
+        ip_result,
+        link_result,
+        intent_result,
+        prompt_result
+    )
 
     return jsonify({
         "risk": risk,
@@ -74,7 +88,8 @@ def analyse():
         "ip": ip_result,
         "links": link_result,
         "intent": intent_result,
-        "prompt_injection": prompt_result
+        "prompt_injection": prompt_result,
+        "ai_explanation": ai_result
     })
 
 if __name__ == '__main__':
