@@ -153,6 +153,87 @@
       font-weight: 800;
       text-transform: uppercase;
     }
+    .history {
+      margin: 12px 0;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 15px;
+      background: rgba(255,255,255,0.07);
+    }
+    .history-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 9px;
+    }
+    .history-head strong {
+      display: block;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .history-head span,
+    .empty-history {
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .history-list {
+      display: grid;
+      gap: 7px;
+    }
+    .history-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 9px;
+      border: 1px solid rgba(52, 211, 153, 0.22);
+      border-radius: 11px;
+      background: rgba(52, 211, 153, 0.08);
+    }
+    .history-item.medium {
+      border-color: rgba(251, 191, 36, 0.25);
+      background: rgba(251, 191, 36, 0.08);
+    }
+    .history-item.high {
+      border-color: rgba(251, 113, 133, 0.28);
+      background: rgba(244, 63, 94, 0.09);
+    }
+    .history-item strong,
+    .history-item span {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .history-item strong {
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .history-item span,
+    .history-score small {
+      margin-top: 3px;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 750;
+    }
+    .history-score {
+      min-width: 58px;
+      text-align: right;
+    }
+    .history-score b {
+      display: block;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 950;
+    }
+    .history-score span,
+    .history-score small {
+      display: block;
+      white-space: nowrap;
+    }
     .result {
       display: grid;
       gap: 10px;
@@ -319,6 +400,14 @@
       <div class="stat"><strong id="stat-scanned">0</strong><span>Scanned</span></div>
       <div class="stat"><strong id="stat-threats">0</strong><span>Threats</span></div>
       <div class="stat"><strong id="stat-safe">0</strong><span>Safe</span></div>
+    </section>
+
+    <section class="history">
+      <div class="history-head">
+        <strong>Threat history evidence</strong>
+        <span id="history-summary">0 saved scans</span>
+      </div>
+      <div class="history-list" id="history-list"></div>
     </section>
 
     <div id="result"></div>

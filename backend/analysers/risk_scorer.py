@@ -1,7 +1,9 @@
 def calculate_risk_score(ml_result: dict, header_result: dict,
                           ip_result: dict, link_result: dict,
                           intent_result: dict = None,
-                          prompt_result: dict = None) -> dict:
+                          prompt_result: dict = None,
+                          tracking_result: dict = None,
+                          attachment_result: dict = None) -> dict:
     """
     Combine all signals into a single risk score (0-100) and level.
     """
@@ -59,6 +61,22 @@ def calculate_risk_score(ml_result: dict, header_result: dict,
         score += 5
         flags.append('Possible hidden AI prompt-injection content')
 
+    tracking_result = tracking_result or {}
+    if tracking_result.get('risk') == 'HIGH':
+        score += 8
+        flags.append('Multiple hidden tracking pixels detected')
+    elif tracking_result.get('risk') == 'MEDIUM':
+        score += 4
+        flags.append('Possible hidden tracking pixel detected')
+
+    attachment_result = attachment_result or {}
+    if attachment_result.get('risk') == 'HIGH':
+        score += 12
+        flags.append('High-risk attachment detected')
+    elif attachment_result.get('risk') == 'MEDIUM':
+        score += 7
+        flags.append('Suspicious attachment detected')
+
     
     score = min(round(score), 100)
  
@@ -77,5 +95,12 @@ def calculate_risk_score(ml_result: dict, header_result: dict,
         "score": score,
         "level": level,
         "verdict": verdict,
-        "flags": flags + header_result.get('flags', []) + ip_result.get('flags', []) + prompt_result.get('flags', [])
+        "flags": (
+            flags
+            + header_result.get('flags', [])
+            + ip_result.get('flags', [])
+            + prompt_result.get('flags', [])
+            + tracking_result.get('flags', [])
+            + attachment_result.get('flags', [])
+        )
     } 

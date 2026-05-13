@@ -12,6 +12,8 @@ from analysers.link_scanner import extract_links, scan_links
 from analysers.risk_scorer import calculate_risk_score
 from analysers.intent_analyser import analyse_intent
 from analysers.prompt_injection_analyser import analyse_prompt_injection
+from analysers.tracking_pixel_analyser import analyse_tracking_pixels
+from analysers.attachment_analyser import analyse_attachments
 from analysers.ai_analyser import analyse_with_ai
 
 app = Flask(__name__)
@@ -45,6 +47,7 @@ def analyse():
     raw_headers = data.get('headers', '')
     sender_email = data.get('senderEmail', '')
     sender_domain = data.get('senderDomain', '')
+    attachments = data.get('attachments', [])
 
     if not sender_domain and sender_email and '@' in sender_email:
         sender_domain = sender_email.split('@')[-1]
@@ -59,13 +62,17 @@ def analyse():
     link_result = scan_links(links)
     intent_result = analyse_intent(subject, body)
     prompt_result = analyse_prompt_injection(body, body_html)
+    tracking_result = analyse_tracking_pixels(body_html)
+    attachment_result = analyse_attachments(attachments)
     risk = calculate_risk_score(
         ml_result,
         header_result,
         ip_result,
         link_result,
         intent_result,
-        prompt_result
+        prompt_result,
+        tracking_result,
+        attachment_result
     )
     ai_result = analyse_with_ai(
         subject,
@@ -89,6 +96,8 @@ def analyse():
         "links": link_result,
         "intent": intent_result,
         "prompt_injection": prompt_result,
+        "tracking_pixels": tracking_result,
+        "attachments": attachment_result,
         "ai_explanation": ai_result
     })
 

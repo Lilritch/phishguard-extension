@@ -1,7 +1,9 @@
 const BACKEND_ANALYSE_URL = 'http://127.0.0.1:5001/analyse';
 const BACKEND_HEALTH_URL = 'http://127.0.0.1:5001/health';
 const SENDER_MEMORY_KEY = 'phishguard_sender_memory_v1';
+const THREAT_HISTORY_KEY = 'phishguard_threat_history_v1';
 const MAX_DOMAINS_PER_SENDER = 24;
+const MAX_HISTORY_ITEMS = 50;
 
 const backendStatus = document.getElementById('backend-status');
 const statusText = document.getElementById('status-text');
@@ -137,10 +139,67 @@ async function updateScanStats(data) {
 }
 
 async function loadStats() {
-  const data = await chrome.storage.local.get(['scanned', 'threats', 'safe']);
+  const data = await chrome.storage.local.get(['scanned', 'threats', 'safe', THREAT_HISTORY_KEY]);
   document.getElementById('stat-scanned').textContent = data.scanned ?? 0;
   document.getElementById('stat-threats').textContent = data.threats ?? 0;
   document.getElementById('stat-safe').textContent = data.safe ?? 0;
+  renderHistory(Array.isArray(data[THREAT_HISTORY_KEY]) ? data[THREAT_HISTORY_KEY] : []);
+}
+
+async function storeThreatHistory(email, data) {
+  const current = await chrome.storage.local.get(THREAT_HISTORY_KEY);
+  const history = Array.isArray(current[THREAT_HISTORY_KEY]) ? current[THREAT_HISTORY_KEY] : [];
+  const risk = data?.risk || {};
+  const tracking = data?.tracking_pixels || {};
+  const attachments = data?.attachments || {};
+  const next = [{
+    scannedAt: new Date().toISOString(),
+    subject: email.subject || '(No subject)',
+    senderEmail: email.senderEmail || '',
+    senderDomain: email.senderDomain || getDomain(email.senderEmail),
+    level: risk.level || 'LOW',
+    score: risk.score || 0,
+    flags: (risk.flags || []).slice(0, 4),
+    trackingPixels: (tracking.tracking_pixels || []).length,
+    riskyAttachments: (attachments.risky_attachments || []).length,
+  }, ...history].slice(0, MAX_HISTORY_ITEMS);
+  await chrome.storage.local.set({ [THREAT_HISTORY_KEY]: next });
+  renderHistory(next);
+}
+
+function renderHistory(history) {
+  const container = document.getElementById('history-list');
+  const summary = document.getElementById('history-summary');
+  if (!container || !summary) return;
+
+  const high = history.filter((item) => item.level === 'HIGH').length;
+  const medium = history.filter((item) => item.level === 'MEDIUM').length;
+  const low = history.filter((item) => item.level === 'LOW').length;
+  summary.textContent = `${history.length} saved scans · ${high} high · ${medium} medium · ${low} low`;
+
+  if (!history.length) {
+    container.innerHTML = '<div class="empty-history">No scan evidence saved yet.</div>';
+    return;
+  }
+
+  container.innerHTML = history.slice(0, 5).map((item) => {
+    const levelClass = String(item.level || 'LOW').toLowerCase();
+    const scannedAt = item.scannedAt ? new Date(item.scannedAt).toLocaleString() : 'Unknown time';
+    return `
+      <div class="history-item ${levelClass}">
+        <div>
+          <strong>${escapeHTML(item.subject)}</strong>
+          <span>${escapeHTML(item.senderEmail || item.senderDomain || 'Unknown sender')}</span>
+          <span>${escapeHTML(scannedAt)}</span>
+        </div>
+        <div class="history-score">
+          <b>${escapeHTML(item.score)}/100</b>
+          <span>${escapeHTML(item.level)}</span>
+          <small>${escapeHTML(item.trackingPixels || 0)} px · ${escapeHTML(item.riskyAttachments || 0)} att</small>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function buildVerificationPlan(email, data, memoryInsight) {
@@ -213,6 +272,7 @@ async function scanEmail() {
         headers: email.headers,
         senderEmail: email.senderEmail,
         senderDomain: email.senderDomain,
+        attachments: email.attachments,
       }),
     });
     if (!response.ok) throw new Error(`Backend returned ${response.status}.`);
@@ -222,6 +282,7 @@ async function scanEmail() {
     const memoryInsight = compareSenderMemory(memory, email);
     await updateSenderMemory(memory, email);
     await updateScanStats(data);
+    await storeThreatHistory(email, data);
     renderResult(data, email, memoryInsight);
     statusText.textContent = 'Scan complete.';
   } catch (err) {
@@ -274,6 +335,8 @@ function renderResult(data, email, memoryInsight) {
   const ip = data?.ip || {};
   const intent = data?.intent || {};
   const promptInjection = data?.prompt_injection || {};
+  const tracking = data?.tracking_pixels || {};
+  const attachments = data?.attachments || {};
   const aiExplanation = data?.ai_explanation || {};
 
   const level = String(risk.level || 'LOW').toLowerCase();
@@ -288,6 +351,8 @@ function renderResult(data, email, memoryInsight) {
   const promptHTML = promptFindings.length
     ? promptFindings.slice(0, 3).map((finding) => `<li>${escapeHTML(finding)}</li>`).join('')
     : '<li>No hidden AI-instruction patterns detected.</li>';
+  const trackingCount = Array.isArray(tracking.tracking_pixels) ? tracking.tracking_pixels.length : 0;
+  const riskyAttachmentCount = Array.isArray(attachments.risky_attachments) ? attachments.risky_attachments.length : 0;
   const verificationHTML = buildVerificationPlan(email, data, memoryInsight)
     .map((step) => `<li>${escapeHTML(step)}</li>`)
     .join('');
@@ -325,6 +390,14 @@ function renderResult(data, email, memoryInsight) {
         <div class="mini">
           <span>Links</span>
           <strong>${escapeHTML(links.total_links ?? 0)} total · ${escapeHTML((links.suspicious_links || []).length)} suspicious</strong>
+        </div>
+        <div class="mini">
+          <span>Tracking</span>
+          <strong>${escapeHTML(trackingCount)} likely pixel(s) · ${escapeHTML(tracking.risk || 'NONE')}</strong>
+        </div>
+        <div class="mini">
+          <span>Attachments</span>
+          <strong>${escapeHTML(attachments.total_attachments ?? email.attachments?.length ?? 0)} total · ${escapeHTML(riskyAttachmentCount)} risky</strong>
         </div>
       </div>
 
