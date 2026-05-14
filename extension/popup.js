@@ -308,6 +308,7 @@ async function showGmailPanel() {
     await ensureContentScript(tab.id);
     await chrome.tabs.sendMessage(tab.id, { type: 'PG_SCAN_AND_SHOW' });
     statusText.textContent = 'Modern Gmail panel started.';
+    setTimeout(() => window.close(), 120);
   } catch (err) {
     statusText.textContent = err.message || 'Could not show Gmail panel.';
   } finally {

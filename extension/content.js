@@ -212,17 +212,22 @@
 
   function authStatus(label, value) {
     const normalized = String(value || 'UNKNOWN').toUpperCase();
-    const cls = normalized === 'PASS'
-      ? 'pass'
-      : normalized === 'FAIL'
-        ? 'fail'
-        : 'unknown';
+    const cls = valueClass(normalized);
     return `
       <div class="pg-auth-row">
         <span>${escapeHTML(label)}</span>
         <span class="pg-status ${cls}">${escapeHTML(normalized)}</span>
       </div>
     `;
+  }
+
+  function valueClass(value) {
+    const normalized = String(value || '').trim().toUpperCase();
+    if (normalized === 'NONE') return 'none';
+    if (normalized === 'UNKNOWN') return 'unknown';
+    if (normalized === 'PASS') return 'pass';
+    if (normalized === 'FAIL' || normalized === 'HIGH') return 'fail';
+    return '';
   }
 
   function riskDotClass(level) {
@@ -332,7 +337,7 @@
           <div class="pg-detail-card pg-detail-wide">
             <p class="pg-col-label">Signals</p>
             <p class="pg-col-sub">${escapeHTML(signalText)}</p>
-            <p class="pg-col-sub">${escapeHTML(intent.goal || 'No clear malicious goal detected')} · prompt check ${escapeHTML(promptRisk)}</p>
+            <p class="pg-col-sub">${escapeHTML(intent.goal || 'No clear malicious goal detected')} · prompt check <span class="pg-inline-value ${valueClass(promptRisk)}">${escapeHTML(promptRisk)}</span></p>
           </div>
 
           <div class="pg-detail-card pg-detail-wide">
