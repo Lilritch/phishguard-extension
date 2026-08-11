@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+backend/ml/evaluation/*.json
+backend/data/manual/*.csv
+backend/data/reports/*.json

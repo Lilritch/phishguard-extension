@@ -1,18 +1,18 @@
-/* PhishGuard Gmail panel - frosted lavender */
+/* PhishGuard-XAI Gmail panel */
 
 #phishguard-panel {
   position: fixed;
   top: var(--pg-overlay-top, 96px);
   left: var(--pg-overlay-left, 240px);
   z-index: 2147483646;
-  width: var(--pg-overlay-width, 360px);
+  width: var(--pg-overlay-width, 380px);
   margin: 0;
   overflow: visible;
-  color: #374151;
+  color: #f8fafc;
   background: transparent;
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  animation: pg-overlay-drop 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: pg-overlay-drop 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 #phishguard-panel * {
@@ -26,8 +26,9 @@
 
 .phishguard-banner,
 .phishguard-details {
-  border: 0.5px solid #D8D4F0;
-  background: linear-gradient(135deg, #F4F2FF 0%, #EEF0FB 100%);
+  border: 1px solid #263247;
+  background: #101826;
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.28);
   pointer-events: auto;
 }
 
@@ -35,18 +36,18 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  min-height: 42px;
-  padding: 8px 12px 8px 14px;
-  border-radius: 16px;
+  min-height: 44px;
+  padding: 9px 10px 9px 12px;
+  border-radius: 8px;
   font-size: 12px;
 }
 
 .pg-banner-left {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -58,32 +59,32 @@
 }
 
 .pg-dot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.pg-dot.high { background: #E8503A; }
-.pg-dot.medium { background: #F5A623; }
-.pg-dot.safe { background: #7A9E7E; }
+.pg-dot.high { background: #ff6b6b; }
+.pg-dot.medium { background: #f5c451; }
+.pg-dot.safe { background: #6ee7a8; }
 
 .pg-risk-label {
   flex: 0 0 auto;
-  color: #374151;
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .pg-divider {
-  color: #9CA3AF;
+  color: #64748b;
   font-size: 10px;
 }
 
 .pg-summary {
   min-width: 0;
   overflow: hidden;
-  color: #6B7280;
+  color: #aab7c8;
   font-size: 12px;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -91,35 +92,39 @@
 }
 
 .pg-details-btn {
-  min-height: 26px;
+  min-height: 28px;
   padding: 4px 10px;
-  border: 0.5px solid #D8D4F0;
+  border: 1px solid #30405a;
   border-radius: 8px;
-  color: #374151;
-  background: #FFFFFF;
+  color: #dbeafe;
+  background: #172033;
   cursor: pointer;
   font: inherit;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .pg-details-btn:hover {
-  background: #F4F2FF;
+  border-color: #42d9c8;
 }
 
 .pg-close-btn {
+  min-width: 22px;
+  min-height: 22px;
   padding: 0;
   border: 0;
-  color: #9CA3AF;
-  background: none;
+  border-radius: 8px;
+  color: #94a3b8;
+  background: transparent;
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1;
 }
 
 .pg-close-btn:hover {
-  color: #374151;
+  color: #ffffff;
+  background: #1f2937;
 }
 
 .phishguard-details {
@@ -127,25 +132,26 @@
   max-height: 0;
   margin-top: 8px;
   overflow: hidden;
-  border-radius: 16px;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  transition: max-height 0.24s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .phishguard-details.open {
-  max-height: 720px;
+  max-height: 780px;
+  overflow: auto;
 }
 
 .pg-details-grid {
   display: grid;
   grid-template-columns: 1fr;
-  padding: 10px;
+  padding: 8px;
   background: transparent;
 }
 
 .pg-detail-card {
   min-width: 0;
-  padding: 12px 14px;
-  border-top: 0.5px solid #E0DCF5;
+  padding: 11px 12px;
+  border-top: 1px solid #1f2937;
   background: transparent;
 }
 
@@ -155,15 +161,15 @@
 
 .pg-detail-card:last-child {
   margin-top: 8px;
-  border: 0.5px solid #D8D4F0;
-  border-radius: 10px;
-  background: #FFFFFF;
+  border: 1px solid #263247;
+  border-radius: 8px;
+  background: #0b1220;
 }
 
 @keyframes pg-overlay-drop {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-6px);
   }
   to {
     opacity: 1;
@@ -177,26 +183,25 @@
 
 .pg-col-label {
   margin-bottom: 5px;
-  color: #9CA3AF;
+  color: #7f8ca3;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 750;
   text-transform: uppercase;
-  letter-spacing: 0.06em !important;
 }
 
 .pg-col-value {
   margin: 3px 0 2px;
   overflow-wrap: anywhere;
-  color: #374151;
+  color: #ffffff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
   line-height: 1.35;
 }
 
 .pg-col-sub {
   margin-top: 4px;
   overflow-wrap: anywhere;
-  color: #6B7280;
+  color: #aab7c8;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -206,13 +211,13 @@
   margin-top: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: #FFFFFF;
+  background: #253149;
 }
 
 .pg-confidence-fill {
   height: 5px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #F5A623 0%, #E8503A 100%);
+  background: linear-gradient(90deg, #42d9c8 0%, #f5c451 52%, #ff6b6b 100%);
 }
 
 .pg-auth-list {
@@ -227,20 +232,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #6B7280;
+  color: #aab7c8;
   font-size: 12px;
 }
 
 .pg-auth-row > span:first-child {
-  color: #6B7280;
-  font-weight: 500;
+  color: #aab7c8;
+  font-weight: 600;
 }
 
 .pg-status,
 .pg-inline-value {
-  color: #374151;
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
 }
 
 .pg-status {
@@ -251,58 +256,99 @@
 }
 
 .pg-status.none,
-.pg-inline-value.none {
-  color: #E8503A;
+.pg-inline-value.none,
+.pg-status.fail {
+  color: #ff6b6b;
 }
 
 .pg-status.unknown,
 .pg-inline-value.unknown {
-  color: #9CA3AF;
-}
-
-.pg-status.fail {
-  color: #E8503A;
+  color: #94a3b8;
 }
 
 .pg-status.pass {
-  color: #374151;
+  color: #6ee7a8;
 }
 
 .pg-tag {
   display: inline-block;
   margin-top: 7px;
   padding: 2px 7px;
-  border: 0.5px solid #D8D4F0;
-  border-radius: 7px;
-  color: #6B7280;
-  background: #FFFFFF;
+  border: 1px solid #30405a;
+  border-radius: 8px;
+  color: #dbeafe;
+  background: #172033;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .pg-analysis-text {
   margin-top: 6px;
-  color: #374151;
+  color: #e5edf7;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.55;
+}
+
+.pg-feedback-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px 12px 12px;
+}
+
+.pg-feedback-actions button {
+  min-height: 30px;
+  border: 1px solid #30405a;
+  border-radius: 8px;
+  background: #172033;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pg-feedback-actions button:first-child {
+  border-color: rgba(110, 231, 168, 0.42);
+  color: #6ee7a8;
+}
+
+.pg-feedback-actions button:last-child {
+  border-color: rgba(255, 107, 107, 0.42);
+  color: #ffb3b3;
+}
+
+.pg-feedback-status {
+  min-height: 18px;
+  padding: 0 12px 12px;
+  color: #9fb0c9;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.pg-feedback-status.ok {
+  color: #6ee7a8;
+}
+
+.pg-feedback-status.error {
+  color: #ffb3b3;
 }
 
 #phishguard-reply-warning {
   margin: 8px 0;
   padding: 10px 12px;
-  border: 0.5px solid #D8D4F0;
-  border-radius: 10px;
-  background: #FFFFFF;
-  color: #374151;
-  font: 500 12px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  border: 1px solid #f5c451;
+  border-radius: 8px;
+  background: #fff7db;
+  color: #42320c;
+  font: 600 12px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }
 
 #phishguard-reply-warning strong {
   display: block;
   margin-bottom: 2px;
-  color: #374151;
+  color: #1f2937;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 @media (max-width: 760px) {
@@ -317,9 +363,5 @@
 
   .pg-summary {
     white-space: normal;
-  }
-
-  .pg-details-grid {
-    padding: 10px;
   }
 }

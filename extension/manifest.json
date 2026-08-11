@@ -5,14 +5,22 @@
   "description": "AI-powered phishing, spam and scam detector for Gmail. Shows email origin, IP reputation, VPN detection and risk score.",
   "permissions": [
     "activeTab",
+    "identity",
     "scripting",
     "storage",
     "tabs"
   ],
   "host_permissions": [
     "https://mail.google.com/*",
+    "https://www.googleapis.com/*",
     "http://127.0.0.1:5001/*"
   ],
+  "oauth2": {
+    "client_id": "264135100735-vsjah2mu9l64an22o75bdhc17jla0250.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly"
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },

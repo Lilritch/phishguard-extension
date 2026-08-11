@@ -25,13 +25,42 @@ def home():
         "status": "PhishGuard backend running",
         "routes": {
             "health": "GET /health",
-            "analyse": "POST /analyse"
+            "analyse": "POST /analyse",
+            "methodology": "GET /methodology"
         }
     })
 
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({"status": "PhishGuard backend running ✅", "version": "3.0"})
+
+@app.route('/methodology', methods=['GET'])
+def methodology():
+    return jsonify({
+        "framework": "PhishGuard-XAI",
+        "thesis_title": "Machine Learning and LLM-Augmented Explainable Framework for Real-Time Multi-Signal Phishing Detection in Email Clients",
+        "core_algorithm": "Confidence-Weighted Adaptive Fusion with Verdict Stability Rule",
+        "signals": {
+            "nlp": {"base_weight": 0.40, "source": "TF-IDF / ML phishing probability"},
+            "header": {"base_weight": 0.25, "source": "Gmail API metadata headers when OAuth is configured; SPF, DKIM, DMARC, Reply-To mismatch"},
+            "ip": {"base_weight": 0.20, "source": "Sender IP geolocation and AbuseIPDB reputation"},
+            "url": {"base_weight": 0.15, "source": "Sender-aware URL structural heuristics"},
+        },
+        "thresholds": {
+            "phishing": "CWAF score >= 60",
+            "suspicious": "40 <= CWAF score < 60",
+            "legitimate": "CWAF score < 40",
+        },
+        "vsr": "A LOW verdict is upgraded to MEDIUM when the sender's last three scans include a HIGH verdict.",
+        "counterfactual_explanations": "Each scan returns actions that would reduce the risk score, such as fixing authentication, removing suspicious links, or improving sender history.",
+        "uncertainty": "Each scan reports evidence completeness so users can see when Gmail-hidden headers, missing IP reputation, or absent URLs reduce confidence.",
+        "feedback_loop": "The extension can export Mark safe / Mark phishing feedback as labelled hard negatives and hard positives for retraining.",
+        "routes": {
+            "health": "GET /health",
+            "analyse": "POST /analyse",
+            "methodology": "GET /methodology"
+        }
+    })
 
 @app.route('/analyse', methods=['POST'])
 def analyse():
@@ -48,6 +77,7 @@ def analyse():
     sender_email = data.get('senderEmail', '')
     sender_domain = data.get('senderDomain', '')
     attachments = data.get('attachments', [])
+    sender_history = data.get('senderHistory', [])
 
     if not sender_domain and sender_email and '@' in sender_email:
         sender_domain = sender_email.split('@')[-1]
@@ -59,7 +89,7 @@ def analyse():
         sender_domain = header_result.get('sender_domain')
     ip_result = analyse_ip(header_result.get('sender_ip'), sender_domain=sender_domain)
     links = extract_links(body)
-    link_result = scan_links(links)
+    link_result = scan_links(links, sender_domain=sender_domain)
     intent_result = analyse_intent(subject, body)
     prompt_result = analyse_prompt_injection(body, body_html)
     tracking_result = analyse_tracking_pixels(body_html)
@@ -72,7 +102,8 @@ def analyse():
         intent_result,
         prompt_result,
         tracking_result,
-        attachment_result
+        attachment_result,
+        sender_history=sender_history
     )
     ai_result = analyse_with_ai(
         subject,

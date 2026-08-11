@@ -1,6 +1,13 @@
 import joblib
 import os
 import re
+import sys
+
+try:
+    import sklearn._loss._loss as sklearn_loss
+    sys.modules.setdefault('_loss', sklearn_loss)
+except Exception:
+    pass
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, 'model', 'phishguard_model.pkl')

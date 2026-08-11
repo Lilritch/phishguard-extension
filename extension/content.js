@@ -11,6 +11,11 @@
   const BACKEND_ANALYSE_URL = 'http://127.0.0.1:5001/analyse';
   const PANEL_ID = 'phishguard-panel';
   const REPLY_WARNING_ID = 'phishguard-reply-warning';
+  const THREAT_HISTORY_KEY = 'phishguard_threat_history_v1';
+  const THESIS_EVIDENCE_KEY = 'phishguard_thesis_evidence_v1';
+  const FEEDBACK_DATASET_KEY = 'phishguard_feedback_dataset_v1';
+  const MAX_EVIDENCE_ITEMS = 150;
+  const MAX_FEEDBACK_ITEMS = 500;
 
   let lastSignature = '';
   let scanTimer = null;
@@ -32,6 +37,47 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  function buildTrainingText(email) {
+    return [
+      `Subject: ${email.subject || ''}`,
+      `From: ${email.senderEmail || ''}`,
+      '',
+      email.body || '',
+    ].join('\n').trim();
+  }
+
+  function normaliseHref(href) {
+    try {
+      const url = new URL(href);
+      const host = url.hostname.replace(/^www\./, '').toLowerCase();
+      const redirected = url.searchParams.get('q') || url.searchParams.get('url');
+      if (redirected && (host === 'google.com' || host === 'mail.google.com')) {
+        return redirected;
+      }
+    } catch {
+      return href;
+    }
+    return href;
+  }
+
+  async function getGmailApiHeaders(email, interactive = false) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'PG_GMAIL_HEADERS',
+        email: {
+          subject: email.subject,
+          senderEmail: email.senderEmail,
+          senderDomain: email.senderDomain,
+        },
+        interactive,
+      });
+      if (response?.ok && response.rawHeaders) return response;
+      return response || { ok: false, reason: 'Gmail API headers unavailable.' };
+    } catch (error) {
+      return { ok: false, reason: error.message };
+    }
   }
 
   function removeLegacyPanels() {
@@ -96,8 +142,16 @@
     const bodyEl = document.querySelector('.a3s.aiL') ||
       document.querySelector('[data-message-id] .a3s') ||
       document.querySelector('.ii.gt div');
-    const body = bodyEl ? bodyEl.innerText.trim() : '';
+    const visibleBody = bodyEl ? bodyEl.innerText.trim() : '';
     const bodyHtml = bodyEl ? bodyEl.innerHTML : '';
+    const bodyLinks = bodyEl
+      ? [...new Set([...bodyEl.querySelectorAll('a[href]')]
+          .map((anchor) => normaliseHref(anchor.href))
+          .filter((href) => /^https?:\/\//i.test(href)))]
+      : [];
+    const body = bodyLinks.length
+      ? `${visibleBody}\n\nExtracted links:\n${bodyLinks.join('\n')}`
+      : visibleBody;
 
     const senderEl = getSenderEl();
     const senderEmail = senderEl ? senderEl.getAttribute('email') || '' : '';
@@ -126,6 +180,30 @@
       headers,
       signature: `${document.location.href}|${subject}|${senderEmail}|${body.slice(0, 160)}`,
     };
+  }
+
+  async function getSenderVerdictHistory(email) {
+    try {
+      const current = await chrome.storage.local.get(THREAT_HISTORY_KEY);
+      const history = Array.isArray(current[THREAT_HISTORY_KEY]) ? current[THREAT_HISTORY_KEY] : [];
+      const senderEmail = String(email.senderEmail || '').trim().toLowerCase();
+      const senderDomain = String(email.senderDomain || '').trim().toLowerCase();
+
+      return history
+        .filter((item) => {
+          const itemEmail = String(item.senderEmail || '').trim().toLowerCase();
+          const itemDomain = String(item.senderDomain || '').trim().toLowerCase();
+          return (senderEmail && itemEmail === senderEmail) || (senderDomain && itemDomain === senderDomain);
+        })
+        .slice(0, 3)
+        .map((item) => ({
+          level: item.level || 'LOW',
+          score: item.score || 0,
+          scannedAt: item.scannedAt || '',
+        }));
+    } catch {
+      return [];
+    }
   }
 
   function getPanelTargetRect() {
@@ -172,6 +250,42 @@
       event.currentTarget.textContent = isOpen ? 'Hide' : 'Details';
       event.currentTarget.setAttribute('aria-expanded', String(Boolean(isOpen)));
     });
+  }
+
+  function setFeedbackStatus(message, tone = 'ok') {
+    const panel = document.getElementById(PANEL_ID);
+    const feedbackStatus = panel?.querySelector('[data-pg-feedback-status]');
+    if (!feedbackStatus) return;
+    feedbackStatus.className = `pg-feedback-status ${tone}`;
+    feedbackStatus.textContent = message;
+  }
+
+  async function storeFeedback(email, label, source = 'gmail_panel') {
+    try {
+      const current = await chrome.storage.local.get(FEEDBACK_DATASET_KEY);
+      const feedbackRows = Array.isArray(current[FEEDBACK_DATASET_KEY]) ? current[FEEDBACK_DATASET_KEY] : [];
+      const text = buildTrainingText(email);
+      if (!text) {
+        setFeedbackStatus('Could not save feedback because no email text was captured.', 'error');
+        return;
+      }
+
+      const nextRows = [{
+        createdAt: new Date().toISOString(),
+        source: `feedback:${source}`,
+        text,
+        label,
+        senderEmail: email.senderEmail || '',
+        senderDomain: email.senderDomain || '',
+        subject: email.subject || '',
+      }, ...feedbackRows].slice(0, MAX_FEEDBACK_ITEMS);
+
+      await chrome.storage.local.set({ [FEEDBACK_DATASET_KEY]: nextRows });
+      const kind = label === 0 ? 'hard negative / safe' : 'hard positive / phishing';
+      setFeedbackStatus(`Saved ${kind} example. Feedback rows: ${nextRows.length}.`, 'ok');
+    } catch (error) {
+      setFeedbackStatus(`Could not save feedback: ${error.message || 'storage error'}.`, 'error');
+    }
   }
 
   function renderLoading(email) {
@@ -253,6 +367,11 @@
     const tracking = data?.tracking_pixels || {};
     const attachments = data?.attachments || {};
     const aiExplanation = data?.ai_explanation || {};
+    const fusion = risk.fusion || {};
+    const fusionSignals = fusion.signals || {};
+    const vsr = fusion.vsr || {};
+    const uncertainty = risk.uncertainty || {};
+    const counterfactuals = Array.isArray(risk.counterfactuals) ? risk.counterfactuals : [];
     const level = String(risk.level || 'LOW').toLowerCase();
     const score = Math.min(Math.max(Number(risk.score || 0), 0), 100);
     const suspiciousLinks = Array.isArray(links.suspicious_links) ? links.suspicious_links.length : 0;
@@ -286,6 +405,17 @@
     const linksText = suspiciousLinks
       ? `${links.total_links ?? 0} total · ${suspiciousLinks} suspicious - Review before clicking`
       : `${links.total_links ?? 0} total · no suspicious link pattern found`;
+    const fusionText = Object.entries(fusionSignals).length
+      ? Object.entries(fusionSignals).map(([name, signal]) => {
+          const weight = Math.round((signal.adaptive_weight || 0) * 100);
+          const scoreValue = Math.round((signal.score || 0) * 100);
+          return `${signal.label || name}: ${weight}% weight, ${scoreValue}% risk`;
+        }).join(' · ')
+      : 'CWAF signal evidence unavailable';
+    const counterfactualText = counterfactuals.length
+      ? counterfactuals.slice(0, 3).map((item) => `${item.action} (-${item.risk_reduction || 0}, new ${item.new_score || score}/100)`).join(' · ')
+      : 'No counterfactual explanation returned';
+    const uncertaintyText = `${uncertainty.evidence_completeness ?? 0}% evidence complete · ${uncertainty.level || 'UNKNOWN'} uncertainty`;
 
     const panel = getPanel();
     panel.innerHTML = `
@@ -341,14 +471,40 @@
           </div>
 
           <div class="pg-detail-card pg-detail-wide">
+            <p class="pg-col-label">CWAF fusion</p>
+            <p class="pg-col-sub">${escapeHTML(fusion.algorithm || 'CWAF+VSR')} · core ${escapeHTML(fusion.core_score ?? score)}/100 · auxiliary +${escapeHTML(fusion.auxiliary_adjustment ?? 0)}</p>
+            <p class="pg-col-sub">${escapeHTML(fusionText)}</p>
+            <p class="pg-col-sub">${escapeHTML(vsr.reason || 'No sender-history stability change applied.')}</p>
+          </div>
+
+          <div class="pg-detail-card pg-detail-wide">
+            <p class="pg-col-label">Counterfactuals</p>
+            <p class="pg-col-sub">${escapeHTML(counterfactualText)}</p>
+          </div>
+
+          <div class="pg-detail-card pg-detail-wide">
+            <p class="pg-col-label">Uncertainty</p>
+            <p class="pg-col-sub">${escapeHTML(uncertaintyText)}</p>
+            <p class="pg-col-sub">${escapeHTML((uncertainty.reasons || []).slice(0, 2).join(' · ') || 'No uncertainty reason returned.')}</p>
+          </div>
+
+          <div class="pg-detail-card pg-detail-wide">
             <p class="pg-col-label">Analysis · ${escapeHTML(aiProviderLabel)}</p>
             <p class="pg-analysis-text">${escapeHTML(aiText || flags.slice(0, 3).join(' ') || 'No explanation returned.')}</p>
           </div>
+
+          <div class="pg-feedback-actions">
+            <button type="button" data-pg-feedback="safe">Mark safe</button>
+            <button type="button" data-pg-feedback="phishing">Mark phishing</button>
+          </div>
+          <div class="pg-feedback-status" data-pg-feedback-status></div>
         </div>
       </div>
     `;
 
     bindPanelButtons(panel);
+    panel.querySelector('[data-pg-feedback="safe"]')?.addEventListener('click', () => storeFeedback(email, 0));
+    panel.querySelector('[data-pg-feedback="phishing"]')?.addEventListener('click', () => storeFeedback(email, 1));
   }
 
   async function updateStats(data) {
@@ -367,9 +523,8 @@
 
   async function storeThreatHistory(email, data) {
     try {
-      const key = 'phishguard_threat_history_v1';
-      const current = await chrome.storage.local.get(key);
-      const history = Array.isArray(current[key]) ? current[key] : [];
+      const current = await chrome.storage.local.get(THREAT_HISTORY_KEY);
+      const history = Array.isArray(current[THREAT_HISTORY_KEY]) ? current[THREAT_HISTORY_KEY] : [];
       const risk = data?.risk || {};
       const tracking = data?.tracking_pixels || {};
       const attachments = data?.attachments || {};
@@ -384,9 +539,53 @@
         trackingPixels: (tracking.tracking_pixels || []).length,
         riskyAttachments: (attachments.risky_attachments || []).length,
       }, ...history].slice(0, 50);
-      await chrome.storage.local.set({ [key]: next });
+      await chrome.storage.local.set({ [THREAT_HISTORY_KEY]: next });
     } catch {
       // History is thesis evidence, but scanning should still work if storage fails.
+    }
+  }
+
+  async function storeThesisEvidence(email, data) {
+    try {
+      const current = await chrome.storage.local.get(THESIS_EVIDENCE_KEY);
+      const evidence = Array.isArray(current[THESIS_EVIDENCE_KEY]) ? current[THESIS_EVIDENCE_KEY] : [];
+      const risk = data?.risk || {};
+      const fusion = risk.fusion || {};
+      const uncertainty = risk.uncertainty || {};
+      const signals = fusion.signals || {};
+      const record = {
+        scannedAt: new Date().toISOString(),
+        source: 'gmail_panel',
+        subjectLength: String(email.subject || '').length,
+        bodyLength: String(email.body || '').length,
+        senderDomain: email.senderDomain || '',
+        verdict: risk.level || 'LOW',
+        score: risk.score || 0,
+        algorithm: fusion.algorithm || 'CWAF+VSR',
+        coreScore: fusion.core_score ?? null,
+        auxiliaryAdjustment: fusion.auxiliary_adjustment ?? null,
+        uncertaintyLevel: uncertainty.level || 'UNKNOWN',
+        evidenceCompleteness: uncertainty.evidence_completeness ?? null,
+        vsrApplied: Boolean(fusion.vsr?.applied),
+        signalWeights: Object.fromEntries(Object.entries(signals).map(([name, signal]) => [
+          name,
+          {
+            score: signal.score,
+            confidence: signal.confidence,
+            adaptiveWeight: signal.adaptive_weight,
+          },
+        ])),
+        counterfactuals: (risk.counterfactuals || []).slice(0, 3).map((item) => ({
+          action: item.action,
+          riskReduction: item.risk_reduction,
+          newScore: item.new_score,
+        })),
+      };
+      await chrome.storage.local.set({
+        [THESIS_EVIDENCE_KEY]: [record, ...evidence].slice(0, MAX_EVIDENCE_ITEMS),
+      });
+    } catch {
+      // Thesis logging should never block the Gmail panel.
     }
   }
 
@@ -400,6 +599,11 @@
     renderLoading(email);
 
     try {
+      const senderHistory = await getSenderVerdictHistory(email);
+      const gmailApiHeaders = await getGmailApiHeaders(email, false);
+      const headers = gmailApiHeaders?.ok
+        ? `${gmailApiHeaders.rawHeaders}\nX-PhishGuard-Header-Source: gmail_api`
+        : `${email.headers}\nX-PhishGuard-Header-Source: gmail_dom\nX-PhishGuard-Gmail-Api-Status: ${gmailApiHeaders?.reason || 'unavailable'}`;
       const response = await fetch(BACKEND_ANALYSE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -407,10 +611,11 @@
           subject: email.subject,
           body: email.body,
           body_html: email.body_html,
-          headers: email.headers,
+          headers,
           senderEmail: email.senderEmail,
           senderDomain: email.senderDomain,
           attachments: email.attachments,
+          senderHistory,
         }),
       });
       if (!response.ok) throw new Error(`Backend returned ${response.status}`);
@@ -421,6 +626,7 @@
       renderResult(data, email);
       updateStats(data);
       storeThreatHistory(email, data);
+      storeThesisEvidence(email, data);
     } catch (err) {
       if (scanId !== currentScanId) return;
       renderError('Flask backend offline or unavailable. Start backend/app.py and rescan.');

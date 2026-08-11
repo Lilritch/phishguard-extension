@@ -94,6 +94,16 @@ def analyse_intent(subject: str, body: str) -> dict:
     matches.sort(key=lambda item: item["confidence"], reverse=True)
     top = matches[0]
 
+    if top["confidence"] < 70:
+        return {
+            "goal": "No clear malicious goal detected",
+            "dangerous_step": "None identified",
+            "advice": "Some administrative or financial wording is present; verify links before acting.",
+            "confidence": top["confidence"],
+            "matches": matches,
+            "flags": [],
+        }
+
     return {
         "goal": top["goal"],
         "dangerous_step": top["dangerous_step"],

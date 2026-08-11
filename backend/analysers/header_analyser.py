@@ -12,6 +12,8 @@ def analyse_headers(raw_headers: str) -> dict:
         "sender_ip": None,
         "sender_domain": None,
         "reply_to_mismatch": False,
+        "authentication_available": False,
+        "header_source": "unknown",
         "flags": []
     }
 
@@ -19,11 +21,20 @@ def analyse_headers(raw_headers: str) -> dict:
         return results
 
     headers_lower = raw_headers.lower()
+    source_match = re.search(r'x-phishguard-header-source:\s*([\w_-]+)', headers_lower)
+    if source_match:
+        results['header_source'] = source_match.group(1)
+    auth_tokens = ['authentication-results:', 'spf=', 'dkim=', 'dmarc=']
+    results['authentication_available'] = any(token in headers_lower for token in auth_tokens)
 
     # SPF check
-    if 'spf=pass' in headers_lower:
+    if 'spf=pass' in headers_lower or re.search(r'received-spf:\s*pass\b', headers_lower):
         results['spf'] = 'PASS'
-    elif 'spf=fail' in headers_lower or 'spf=softfail' in headers_lower:
+    elif (
+        'spf=fail' in headers_lower or
+        'spf=softfail' in headers_lower or
+        re.search(r'received-spf:\s*(?:fail|softfail)\b', headers_lower)
+    ):
         results['spf'] = 'FAIL'
         results['flags'].append('SPF authentication failed')
 
@@ -40,9 +51,11 @@ def analyse_headers(raw_headers: str) -> dict:
     elif 'dmarc=fail' in headers_lower:
         results['dmarc'] = 'FAIL'
         results['flags'].append('DMARC policy violation')
-    elif 'dmarc' not in headers_lower:
+    elif 'dmarc=none' in headers_lower:
         results['dmarc'] = 'NONE'
         results['flags'].append('No DMARC record found')
+    elif not results['authentication_available']:
+        results['flags'].append('Authentication results unavailable in Gmail view')
 
     # Extract sender IP from Received headers
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
